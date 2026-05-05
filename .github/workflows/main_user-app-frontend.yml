@@ -1,10 +1,9 @@
-name: Build and deploy Node.js app to Azure Web App - User-App-frontend
+name: Build and deploy React app to Azure
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
@@ -13,21 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build project
+      - name: Build app
         run: npm run build
 
-      - name: Upload artifact for deployment job
+      - name: Upload build folder
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
+          name: react-build
           path: build
 
   deploy:
@@ -35,21 +34,14 @@ jobs:
     needs: build
 
     steps:
-      - name: Download artifact
+      - name: Download build
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: react-build
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AC47897ACDBC4CE6842CA2DFA9C62FA7 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3B5C45CAF32646A68D2622A2AE3EA2EB }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_97F964745CCB4D47AC84E8652D845BEB }}
-
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'User-App-frontend'
-          slot-name: 'Production'
+          app-name: User-App-frontend
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
