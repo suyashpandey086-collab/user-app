@@ -4,23 +4,25 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: '22.x'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build app
+      - name: Build project
         run: npm run build
 
       - name: Upload build folder
@@ -33,15 +35,26 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-      - name: Download build
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: react-build
+          path: build
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AC47897ACDBC4CE6842CA2DFA9C62FA7 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3B5C45CAF32646A68D2622A2AE3EA2EB }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_97F964745CCB4D47AC84E8652D845BEB }}
 
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v3
         with:
           app-name: User-App-frontend
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
+          package: build
